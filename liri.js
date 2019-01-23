@@ -1,134 +1,115 @@
 require("dotenv").config();
 
 const keys = require("./keys.js");
-const Spotify = require("node-spotify-api");
 const axios = require("axios");
 const moment = require("moment");
 
-const spotify = new Spotify(keys.spotify);
 
-const liriRequest = process.argv[2];
+let liriRequest = process.argv[2];
 
-// if (process.argv[2] === "concert-this") {
-//     let artist = process.argv.slice(3).join(" ");
-//     axios.get("https://rest.bandsintown.com/artists/" + artist + "/events?app_id=codingbootcamp").then(function(response) {
-//         console.log("Name of venue: " + response.data.venue.name);
-//         console.log("Location: " + response.data.venue.city + ", " + response.data.venue.region + " " + response.data.venue.country);
-//         console.log("Date of Event: " + moment(response.data.datetime).format('MM/DD/YYYY'));
-//     });
-// } else if (process.argv[2] === "movie-this" && process.argv[3] != null) {
-//     let movie = process.argv.slice(3).join(" ");
-//     axios.get("http://www.omdbapi.com/?t=" + movie + "&y=&plot=short&tomatoes=true&apikey=trilogy").then(function(response) {
-//         console.log("Title: " + response.data.Title);
-//         console.log("Release Year: " + response.data.Year);
-//         console.log("IMDB Rating: " + response.data.imdbRating);
-//         console.log("Rotten Tomatoes Rating: " + response.data.tomatoRating);
-//         console.log("Country: " + response.data.Country);
-//         console.log("Language: " + response.data.Language);
-//         console.log("Plot: " + response.data.Plot);
-//         console.log("Cast: " + response.data.Actors);
-//     });
-// } else if (process.argv[2] === "movie-this" && process.argv[3] == null) {
-//     let movie = "Mr. Nobody";
-//     axios.get("http://www.omdbapi.com/?t=" + movie + "&y=&plot=short&tomatoes=true&apikey=trilogy").then(function(response) {
-//         console.log("Title: " + response.data.Title);
-//         console.log("Release Year: " + response.data.Year);
-//         console.log("IMDB Rating: " + response.data.imdbRating);
-//         console.log("Rotten Tomatoes Rating: " + response.data.tomatoRating);
-//         console.log("Country: " + response.data.Country);
-//         console.log("Language: " + response.data.Language);
-//         console.log("Plot: " + response.data.Plot);
-//         console.log("Cast: " + response.data.Actors);
-//     });
+let requestItem = process.argv[3];
 
-// }
+switch(liriRequest) {
+    case "movie-this":
+        if(requestItem == undefined){
+            requestItem = "Mr. Nobody";
+        } else {
+            requestItem = process.argv.slice(3).join(" ");
+        }
+        movieSearch();
+        break;
 
-//function to run movie-this
-function movie() {
-    let searchMovie = process.argv.slice(3).join(" ");
-    if (searchMovie) {
-        axios.get("http://www.omdbapi.com/?t=" + movie + "&y=&plot=short&tomatoes=true&apikey=trilogy").then(function(response) {
+    case "concert-this":
+        requestItem = process.argv.slice(3).join(" ");
+        concertSearch();
+        break;
+
+    case "spotify-this-song":
+        if(requestItem == undefined){
+            requestItem = "The sign ace of base";
+        } else {
+            requestItem = process.argv.slice(3).join(" ");
+        }
+        songSearch();
+        break;
+
+    case "do-what-it-says":
+        randomFile();
+        break;
+
+    default:
+        return undefined;
+};
+
+function movieSearch() {
+        axios.get("http://www.omdbapi.com/?t=" + requestItem + "&y=&plot=short&tomatoes=true&apikey=trilogy").then(function(response) {
             console.log("Title: " + response.data.Title);
             console.log("Release Year: " + response.data.Year);
             console.log("IMDB Rating: " + response.data.imdbRating);
-            console.log("Rotten Tomatoes Rating: " + response.data.tomatoRating);
+            console.log("Rotten Tomatoes Rating: " + response.data.Ratings[1].Value);
             console.log("Country: " + response.data.Country);
             console.log("Language: " + response.data.Language);
             console.log("Plot: " + response.data.Plot);
             console.log("Cast: " + response.data.Actors);
-        });                        
-    } else {
-        let movie = "Mr. Nobody";
-        axios.get("http://www.omdbapi.com/?t=" + movie + "&y=&plot=short&tomatoes=true&apikey=trilogy").then(function(response) {
-            console.log("Title: " + response.data.Title);
-            console.log("Release Year: " + response.data.Year);
-            console.log("IMDB Rating: " + response.data.imdbRating);
-            console.log("Rotten Tomatoes Rating: " + response.data.tomatoRating);
-            console.log("Country: " + response.data.Country);
-            console.log("Language: " + response.data.Language);
-            console.log("Plot: " + response.data.Plot);
-            console.log("Cast: " + response.data.Actors);
-        });
-    }
+    });
+
 }
 
-//function to run concert-this
-function concert() {
-    let artist = process.argv.slice(3).join("+");
-    axios.get("https://rest.bandsintown.com/artists/" + artist + "/events?app_id=codingbootcamp").then(function(response) {
-        for (let i = 0; i < response.data.length; i++) {
-            console.log("Name of Venue: " + response.data[i].venue.name);
-            console.log("Location: " + response.data[i].venue.city + ", " + response.data[i].venue.region + " " + response.data[i].venue.country);
-            console.log("Date of Event: " + moment(response.data[i].datetime).format('MM/DD/YYYY'));
+function concertSearch() {
+    axios.get("https://rest.bandsintown.com/artists/" + requestItem + "/events?app_id=codingbootcamp").then(function(response) {
+        if (response.data[0] == undefined) {
+            console.log("Sorry! There are no upcoming events for that artist. Try again!");
+        }else{
+            console.log("Name of Venue: " + response.data[0].venue.name);
+            console.log("Location: " + response.data[0].venue.city + ", " + response.data[0].venue.region + " " + response.data[0].venue.country);
+            console.log("Date of Event: " + moment(response.data[0].datetime).format('MM/DD/YYYY'));
+        }
+    }).catch(function(error) {
+        console.log(error);
+    });
+}
 
+function songSearch() {
+    const Spotify = require("node-spotify-api");
+    const spotify = new Spotify(keys.spotify);
+
+    spotify.search({ type: 'track', query: requestItem, limit: 1}, function(err, data) {
+        if(err) {
+            console.log(err);
+        }
+        console.log("Artist: " + data.tracks.items[0].artists[0].name);
+        console.log("Song Name: " + data.tracks.items[0].name);
+        console.log("Preview Link: " + data.tracks.items[0].preview_url);
+        console.log("Album: " + data.tracks.items[0].album.name);
+    });
+}
+
+
+
+function randomFile() {
+    const fs = require("fs");
+    fs.readFile("random.txt", "utf8", function(err, data) {
+        if(err) {
+            console.log(err);
+        }
+        let fileData = data.split(",");
+        let fileCommand = fileData[0];
+        requestItem = fileData[1];
+
+        if(fileCommand == "concert-this") {
+            concertSearch();
+        } 
+        else if(fileCommand == "movie-this") {
+            movieSearch();
+        }
+        else if(fileCommand == "spotify-this-song") {
+            songSearch();
+        }
+        else {
+            console.log("That's not a valid command");
         }
 
     });
 }
 
-function music() {
-    let song = process.argv.slice(3).join(" ");
-    if (song) {
-        spotify.search({type: 'track', query: song}, function(err, data) {
-            if (err) {
-                 return console.log(err);
-            }
-                console.log("Artist: " + data.tracks.items[0].artists[0].name);
-                console.log("Song Name: " + data.tracks.item[0].name);
-                console.log("Preview Link: " + data.tracks.item[0].preview_url);
-                console.log("Album: " + data.tracks.item[0].album.name);
-            
-        });
-    } else {
-        let song = "The Sign";
-        spotify.search({type: 'track', query: song}, function(err, data) {
-            if (err) {
-                 return console.log(err);
-            }
-                console.log("Artist: " + data.tracks.items[0].artists[0].name);
-                console.log("Song Name: " + data.tracks.item[0].name);
-                console.log("Preview Link: " + data.tracks.item[0].preview_url);
-                console.log("Album: " + data.tracks.item[0].album.name);
-            
-        });
 
-    }
-}
-
-function doWhatItSays() {
-
-}
-
-
-switch(liriRequest) {
-    case "movie-this":
-        movie();
-    case "concert-this":
-        concert();
-    case "spotify-this-song":
-        music();
-    case "do-what-it-says":
-        doWhatItSays();
-    default:
-        return undefined;
-}
